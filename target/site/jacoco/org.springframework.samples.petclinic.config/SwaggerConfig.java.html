@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SwaggerConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">spring-petclinic-rest</a> &gt; <a href="index.source.html" class="el_package">org.springframework.samples.petclinic.config</a> &gt; <span class="el_source">SwaggerConfig.java</span></div><h1>SwaggerConfig.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2016 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.samples.petclinic.config;
+
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.Contact;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.spring.web.plugins.WebFluxRequestHandlerProvider;
+import springfox.documentation.spring.web.plugins.WebMvcRequestHandlerProvider;
+
+import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Java config for Springfox swagger documentation plugin
+ *
+ * @author Vitaliy Fedoriv
+ */
+@Configuration
+<span class="fc" id="L45">public class SwaggerConfig {</span>
+
+   @Bean
+   public Docket customDocket(){
+<span class="fc" id="L49">      return new Docket(DocumentationType.OAS_30)</span>
+<span class="fc" id="L50">    		  .select()</span>
+<span class="fc" id="L51">              .apis(RequestHandlerSelectors.any())</span>
+<span class="fc" id="L52">              .paths(PathSelectors.any())</span>
+<span class="fc" id="L53">              .build()</span>
+<span class="fc" id="L54">              .apiInfo(getApiInfo());</span>
+   }
+
+   private ApiInfo getApiInfo() {
+<span class="fc" id="L58">	   return new ApiInfo(</span>
+		&quot;REST Petclinic backend Api Documentation&quot;,
+		&quot;This is REST API documentation of the Spring Petclinic backend. If authentication is enabled, when calling the APIs use admin/admin&quot;,
+		&quot;1.0&quot;,
+		&quot;Petclinic backend terms of service&quot;,
+		new Contact(
+				&quot;Vitaliy Fedoriv&quot;,
+				&quot;https://github.com/spring-petclinic/spring-petclinic-rest&quot;,
+				&quot;vitaliy.fedoriv@gmail.com&quot;),
+		&quot;Apache 2.0&quot;,
+<span class="fc" id="L68">		&quot;http://www.apache.org/licenses/LICENSE-2.0&quot;, Collections.emptyList());</span>
+   }
+
+    /**
+     * Springfox workaround required by Spring Boot 2.6
+     * See https://github.com/springfox/springfox/issues/3462
+     */
+    @Bean
+    public static BeanPostProcessor springfoxHandlerProviderBeanPostProcessor() {
+<span class="fc" id="L77">        return new BeanPostProcessor() {</span>
+
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+<span class="pc bpc" id="L81" title="1 of 4 branches missed.">                if (bean instanceof WebMvcRequestHandlerProvider || bean instanceof WebFluxRequestHandlerProvider) {</span>
+<span class="fc" id="L82">                    customizeSpringfoxHandlerMappings(getHandlerMappings(bean));</span>
+                }
+<span class="fc" id="L84">                return bean;</span>
+            }
+
+            private &lt;T extends RequestMappingInfoHandlerMapping&gt; void customizeSpringfoxHandlerMappings(List&lt;T&gt; mappings) {
+<span class="fc bfc" id="L88" title="All 2 branches covered.">                mappings.removeIf(mapping -&gt; mapping.getPatternParser() != null);</span>
+<span class="fc" id="L89">            }</span>
+
+            @SuppressWarnings(&quot;unchecked&quot;)
+            private List&lt;RequestMappingInfoHandlerMapping&gt; getHandlerMappings(Object bean) {
+                try {
+<span class="fc" id="L94">                    Field field = ReflectionUtils.findField(bean.getClass(), &quot;handlerMappings&quot;);</span>
+<span class="fc" id="L95">                    field.setAccessible(true);</span>
+<span class="fc" id="L96">                    return (List&lt;RequestMappingInfoHandlerMapping&gt;) field.get(bean);</span>
+<span class="nc" id="L97">                } catch (IllegalArgumentException | IllegalAccessException e) {</span>
+<span class="nc" id="L98">                    throw new IllegalStateException(e);</span>
+                }
+            }
+        };
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

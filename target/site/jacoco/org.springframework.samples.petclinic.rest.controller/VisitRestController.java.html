@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VisitRestController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">spring-petclinic-rest</a> &gt; <a href="index.source.html" class="el_package">org.springframework.samples.petclinic.rest.controller</a> &gt; <span class="el_source">VisitRestController.java</span></div><h1>VisitRestController.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2016-2017 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.samples.petclinic.rest.controller;
+
+import io.swagger.annotations.ApiParam;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.samples.petclinic.mapper.VisitMapper;
+import org.springframework.samples.petclinic.model.Visit;
+import org.springframework.samples.petclinic.rest.api.VisitsApi;
+import org.springframework.samples.petclinic.rest.dto.VisitDto;
+import org.springframework.samples.petclinic.service.ClinicService;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import javax.transaction.Transactional;
+import javax.validation.Valid;
+import javax.validation.constraints.Min;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author Vitaliy Fedoriv
+ */
+
+@RestController
+@CrossOrigin(exposedHeaders = &quot;errors, content-type&quot;)
+@RequestMapping(&quot;api&quot;)
+public class VisitRestController implements VisitsApi {
+
+    private final ClinicService clinicService;
+
+    private final VisitMapper visitMapper;
+
+<span class="fc" id="L51">    public VisitRestController(ClinicService clinicService, VisitMapper visitMapper) {</span>
+<span class="fc" id="L52">        this.clinicService = clinicService;</span>
+<span class="fc" id="L53">        this.visitMapper = visitMapper;</span>
+<span class="fc" id="L54">    }</span>
+
+
+    @PreAuthorize(&quot;hasRole(@roles.OWNER_ADMIN)&quot;)
+    @Override
+    public ResponseEntity&lt;List&lt;VisitDto&gt;&gt; listVisits() {
+<span class="fc" id="L60">        List&lt;Visit&gt; visits = new ArrayList&lt;&gt;(this.clinicService.findAllVisits());</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (visits.isEmpty()) {</span>
+<span class="fc" id="L62">            return new ResponseEntity&lt;&gt;(HttpStatus.NOT_FOUND);</span>
+        }
+<span class="fc" id="L64">        return new ResponseEntity&lt;&gt;(new ArrayList&lt;&gt;(visitMapper.toVisitsDto(visits)), HttpStatus.OK);</span>
+    }
+
+    @PreAuthorize(&quot;hasRole(@roles.OWNER_ADMIN)&quot;)
+    @Override
+    public ResponseEntity&lt;VisitDto&gt; getVisit( Integer visitId) {
+<span class="fc" id="L70">        Visit visit = this.clinicService.findVisitById(visitId);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (visit == null) {</span>
+<span class="fc" id="L72">            return new ResponseEntity&lt;&gt;(HttpStatus.NOT_FOUND);</span>
+        }
+<span class="fc" id="L74">        return new ResponseEntity&lt;&gt;(visitMapper.toVisitDto(visit), HttpStatus.OK);</span>
+    }
+
+    @PreAuthorize(&quot;hasRole(@roles.OWNER_ADMIN)&quot;)
+    @Override
+    public ResponseEntity&lt;VisitDto&gt; addVisit(VisitDto visitDto) {
+<span class="fc" id="L80">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L81">        Visit visit = visitMapper.toVisit(visitDto);</span>
+<span class="fc" id="L82">        this.clinicService.saveVisit(visit);</span>
+<span class="fc" id="L83">        visitDto = visitMapper.toVisitDto(visit);</span>
+<span class="fc" id="L84">        headers.setLocation(UriComponentsBuilder.newInstance().path(&quot;/api/visits/{id}&quot;).buildAndExpand(visit.getId()).toUri());</span>
+<span class="fc" id="L85">        return new ResponseEntity&lt;&gt;(visitDto, headers, HttpStatus.CREATED);</span>
+    }
+
+    @PreAuthorize(&quot;hasRole(@roles.OWNER_ADMIN)&quot;)
+    @Override
+    public ResponseEntity&lt;VisitDto&gt; updateVisit(Integer visitId, VisitDto visitDto) {
+<span class="fc" id="L91">        Visit currentVisit = this.clinicService.findVisitById(visitId);</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (currentVisit == null) {</span>
+<span class="nc" id="L93">            return new ResponseEntity&lt;&gt;(HttpStatus.NOT_FOUND);</span>
+        }
+<span class="fc" id="L95">        currentVisit.setDate(visitDto.getDate());</span>
+<span class="fc" id="L96">        currentVisit.setDescription(visitDto.getDescription());</span>
+<span class="fc" id="L97">        this.clinicService.saveVisit(currentVisit);</span>
+<span class="fc" id="L98">        return new ResponseEntity&lt;&gt;(visitMapper.toVisitDto(currentVisit), HttpStatus.NO_CONTENT);</span>
+    }
+
+    @PreAuthorize(&quot;hasRole(@roles.OWNER_ADMIN)&quot;)
+    @Transactional
+    @Override
+    public ResponseEntity&lt;VisitDto&gt; deleteVisit(Integer visitId) {
+<span class="fc" id="L105">        Visit visit = this.clinicService.findVisitById(visitId);</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (visit == null) {</span>
+<span class="fc" id="L107">            return new ResponseEntity&lt;&gt;(HttpStatus.NOT_FOUND);</span>
+        }
+<span class="fc" id="L109">        this.clinicService.deleteVisit(visit);</span>
+<span class="fc" id="L110">        return new ResponseEntity&lt;&gt;(HttpStatus.NO_CONTENT);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
